@@ -4,9 +4,9 @@ const API_KEY = process.env.API_FOOTBALL_KEY!
 const BASE_URL = 'https://free-api-live-football-data.p.rapidapi.com'
 
 // League IDs for Free API Live Football Data (by Smart API on RapidAPI)
-// World Cup = 77, Euros = 9, Champions League = 2
+// World Cup = 17, Euros = 9, Champions League = 2
 const LEAGUE_IDS: Record<string, number> = {
-  wc: 77,
+  wc: 17,
   euros: 9,
   ucl: 2,
 }
@@ -38,7 +38,7 @@ export async function syncMatchResults(competitionId: string) {
 
   // Determine league ID from slug prefix
   const slugPrefix = comp.slug.replace(/\d+/g, '').toLowerCase()
-  const leagueId = LEAGUE_IDS[slugPrefix] ?? 77
+  const leagueId = LEAGUE_IDS[slugPrefix] ?? 17
   const season = new Date(comp.start_date || Date.now()).getFullYear()
 
   // Fetch today's fixtures
