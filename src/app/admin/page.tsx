@@ -23,7 +23,7 @@ export default async function AdminPage() {
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">⚽ ICTU Football Madness</h1>
-        <p className="text-gray-500 mt-1">Admin dashboard</p>
+        <p className="text-gray-500 mt-1">Admin dashboard ⚽</p>
       </div>
 
       {/* Quick actions */}
