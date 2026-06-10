@@ -123,7 +123,7 @@ export default function ParticipantsPage() {
                     </div>
                   )}
                   <input
-                    ref={el => fileRefs.current[p.id] = el}
+                    ref={el => { fileRefs.current[p.id] = el; }}
                     type="file" accept="image/*" className="hidden"
                     onChange={e => {
                       const file = e.target.files?.[0]
