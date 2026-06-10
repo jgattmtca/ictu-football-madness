@@ -1,11 +1,13 @@
 import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import RaceTrack from '@/components/RaceTrack'
 import ScoreTable from '@/components/ScoreTable'
 import CompetitionHeader from '@/components/CompetitionHeader'
+import HallOfShame from '@/components/HallOfShame'
 import { LeaderboardEntry } from '@/types'
 
-export const revalidate = 300 // revalidate every 5 min
+export const revalidate = 300
 
 interface Props { params: { slug: string } }
 
@@ -40,7 +42,6 @@ async function getLeaderboard(slug: string): Promise<{
   const participantMap = new Map((participants || []).map(p => [p.id, p]))
   const specialMap = new Map((specials || []).map(s => [s.participant_id, s]))
 
-  // Build leaderboard — include participants with no scores yet
   const scoredIds = new Set((scores || []).map((s: any) => s.participant_id))
   const unscoredParticipants = (participants || []).filter(p => !scoredIds.has(p.id))
 
@@ -83,6 +84,17 @@ export default async function DashboardPage({ params }: Props) {
         </div>
       ) : (
         <div className="max-w-5xl mx-auto px-4 pb-16 space-y-10">
+
+          {/* Quick nav */}
+          <div className="flex gap-3 pt-2">
+            <Link
+              href={`/dashboard/${params.slug}/results`}
+              className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-green-500/40 text-green-300 text-sm px-4 py-2.5 rounded-xl transition-all"
+            >
+              ⚽ Match centre
+            </Link>
+          </div>
+
           {/* Rat race */}
           <section>
             <h2 className="text-green-300/70 text-sm font-medium uppercase tracking-widest mb-4">
@@ -98,16 +110,21 @@ export default async function DashboardPage({ params }: Props) {
             </h2>
             <ScoreTable leaderboard={leaderboard} />
           </section>
+
+          {/* Hall of Shame */}
+          <HallOfShame
+            leaderboard={leaderboard}
+            competitionId={competition.id}
+          />
+
         </div>
       )}
 
-      {/* Auto-refresh */}
       <AutoRefresh />
     </main>
   )
 }
 
-// Client component for auto-refresh every 5 minutes
 function AutoRefresh() {
   return (
     <script
