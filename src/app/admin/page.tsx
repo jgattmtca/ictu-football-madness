@@ -1,17 +1,15 @@
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
+'use client'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 
-export default async function AdminPage() {
-  const cookieStore = cookies()
-  const isAuthed = cookieStore.get('admin_auth')?.value === process.env.ADMIN_PASSWORD
-  if (!isAuthed) redirect('/admin/login')
+export default function AdminPage() {
+  const [competitions, setCompetitions] = useState<any[]>([])
 
-  const { data: competitions } = await supabase
-    .from('competitions')
-    .select('*, participants(count), matches(count)')
-    .order('created_at', { ascending: false })
+  useEffect(() => {
+    fetch('/api/admin/competitions')
+      .then(r => r.json())
+      .then(d => setCompetitions(d.competitions || []))
+  }, [])
 
   const cards = [
     { href: '/admin/competitions', icon: '🏆', label: 'Competitions', desc: 'Create & manage tournaments' },
@@ -42,41 +40,10 @@ export default async function AdminPage() {
 
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Competitions</h2>
-        {competitions && competitions.length > 0 ? (
+        {competitions.length > 0 ? (
           <div className="space-y-3">
             {competitions.map((comp: any) => (
-              <div
-                key={comp.id}
-                className="bg-white rounded-xl border border-gray-200 p-4"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">{comp.name}</span>
-                      {comp.is_active && (
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Active</span>
-                      )}
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      /{comp.slug} · {comp.participants?.[0]?.count ?? 0} participants
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2 items-end">
-                    <div className="flex items-center gap-3">
-                      <Link
-                        href={`/dashboard/${comp.slug}`}
-                        target="_blank"
-                        className="text-xs text-green-600 hover:underline"
-                      >
-                        View dashboard ↗
-                      </Link>
-                      <SendEmailButton competitionId={comp.id} />
-                      <SyncScoresButton competitionId={comp.id} />
-                    </div>
-                    <MessageBoard competitionId={comp.id} />
-                  </div>
-                </div>
-              </div>
+              <CompetitionCard key={comp.id} comp={comp} />
             ))}
           </div>
         ) : (
@@ -92,62 +59,99 @@ export default async function AdminPage() {
   )
 }
 
-function SendEmailButton({ competitionId }: { competitionId: string }) {
-  return (
-    <form action={`/api/email/send?competitionId=${competitionId}`} method="POST">
-      <button
-        type="submit"
-        className="text-xs bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors"
-      >
-        📧 Email standings
-      </button>
-    </form>
-  )
-}
+function CompetitionCard({ comp }: { comp: any }) {
+  const [message, setMessage] = useState('')
+  const [postMsg, setPostMsg] = useState('')
 
-function SyncScoresButton({ competitionId }: { competitionId: string }) {
-  return (
-    <form action={`/api/scores/recalculate?competitionId=${competitionId}`} method="POST">
-      <button
-        type="submit"
-        className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
-      >
-        🔄 Sync scores
-      </button>
-    </form>
-  )
-}
-
-function MessageBoard({ competitionId }: { competitionId: string }) {
-  async function postMessage(formData: FormData) {
-    'use server'
-    const message = formData.get('message') as string
-    const { createClient } = await import('@supabase/supabase-js')
-    const admin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-    await admin
-      .from('competitions')
-      .update({ commissioner_message: message })
-      .eq('id', competitionId)
+  async function handlePost(e: React.FormEvent) {
+    e.preventDefault()
+    if (!message.trim()) return
+    const res = await fetch('/api/admin/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, competitionId: comp.id }),
+    })
+    if (res.ok) {
+      setPostMsg('✅ Message posted!')
+      setMessage('')
+    } else {
+      setPostMsg('❌ Failed to post.')
+    }
   }
 
-  async function clearMessage() {
-    'use server'
-    const { createClient } = await import('@supabase/supabase-js')
-    const admin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-    await admin
-      .from('competitions')
-      .update({ commissioner_message: '' })
-      .eq('id', competitionId)
+  async function handleDelete() {
+    const res = await fetch('/api/admin/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: '', competitionId: comp.id }),
+    })
+    if (res.ok) {
+      setMessage('')
+      setPostMsg('🗑️ Message cleared!')
+    }
   }
 
   return (
-    <div className="mt-1 w-full">
-      <form action={postMessage} className="mt-1">
+    <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-gray-900">{comp.name}</span>
+            {comp.is_active && (
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Active</span>
+            )}
+          </div>
+          <div className="text-xs text-gray-400 mt-1">
+            /{comp.slug} · {comp.participants?.[0]?.count ?? 0} participants
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/dashboard/${comp.slug}`}
+            target="_blank"
+            className="text-xs text-green-600 hover:underline"
+          >
+            View dashboard ↗
+          </Link>
+          <form action={`/api/email/send?competitionId=${comp.id}`} method="POST">
+            <button type="submit" className="text-xs bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors">
+              📧 Email standings
+            </button>
+          </form>
+          <form action={`/api/scores/recalculate?competitionId=${comp.id}`} method="POST">
+            <button type="submit" className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">
+              🔄 Sync scores
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <form onSubmit={handlePost} className="mt-2">
         <textarea
-          name="message"
+          value={message}
+          onChange={e => setMessage(e.target.value)}
+          placeholder="Type a message for all participants... 😈"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+          rows={2}
+        />
+        <div className="flex gap-2 mt-1">
+          <button
+            type="submit"
+            disabled={!message.trim()}
+            className="flex-1 text-xs bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors disabled:opacity-50"
+          >
+            📣 Post message
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="text-xs bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors"
+          >
+            🗑️
+          </button>
+        </div>
+      </form>
+      {postMsg && <p className="text-xs mt-1 text-gray-500">{postMsg}</p>}
+    </div>
+  )
+}
