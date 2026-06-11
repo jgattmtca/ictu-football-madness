@@ -50,9 +50,24 @@ export default function CoAdminPage() {
     setPosting(false)
   }
 
+  async function handleDelete() {
+    try {
+      await fetch('/api/admin/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: '', competitionId }),
+      })
+      setMessage('')
+      setPostMsg('🗑️ Message cleared!')
+    } catch {
+      setPostMsg('❌ Failed to clear. Try again.')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md space-y-6">
+
         <div className="text-center">
           <div className="text-4xl mb-2">⚽</div>
           <h1 className="text-xl font-bold text-gray-900">ICTU Football Madness</h1>
@@ -89,13 +104,22 @@ export default function CoAdminPage() {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
               rows={3}
             />
-            <button
-              type="submit"
-              disabled={posting || !message.trim()}
-              className="w-full bg-purple-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
-            >
-              {posting ? 'Posting…' : '📣 Post message'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={posting || !message.trim()}
+                className="flex-1 bg-purple-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+              >
+                {posting ? 'Posting…' : '📣 Post message'}
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-4 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
+              >
+                🗑️
+              </button>
+            </div>
           </form>
           {postMsg && (
             <p className="text-sm mt-2 text-center text-gray-600">{postMsg}</p>
@@ -107,6 +131,7 @@ export default function CoAdminPage() {
             View leaderboard →
           </a>
         </div>
+
       </div>
     </div>
   )

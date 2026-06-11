@@ -26,7 +26,6 @@ export default async function AdminPage() {
         <p className="text-gray-500 mt-1">Admin dashboard ⚽</p>
       </div>
 
-      {/* Quick actions */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
         {cards.map(card => (
           <Link
@@ -41,7 +40,6 @@ export default async function AdminPage() {
         ))}
       </div>
 
-      {/* Active competitions */}
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Competitions</h2>
         {competitions && competitions.length > 0 ? (
@@ -121,35 +119,35 @@ function SyncScoresButton({ competitionId }: { competitionId: string }) {
 }
 
 function MessageBoard({ competitionId }: { competitionId: string }) {
+  async function postMessage(formData: FormData) {
+    'use server'
+    const message = formData.get('message') as string
+    const { createClient } = await import('@supabase/supabase-js')
+    const admin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    await admin
+      .from('competitions')
+      .update({ commissioner_message: message })
+      .eq('id', competitionId)
+  }
+
+  async function clearMessage() {
+    'use server'
+    const { createClient } = await import('@supabase/supabase-js')
+    const admin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    await admin
+      .from('competitions')
+      .update({ commissioner_message: '' })
+      .eq('id', competitionId)
+  }
+
   return (
     <div className="mt-1 w-full">
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault()
-          const form = e.target as HTMLFormElement
-          const message = (form.elements.namedItem('message') as HTMLTextAreaElement).value
-          await fetch('/api/admin/message', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, competitionId }),
-          })
-          alert('Message updated!')
-        }}
-        className="mt-1"
-      >
+      <form action={postMessage} className="mt-1">
         <textarea
           name="message"
-          placeholder="Type a message for all participants... 😈"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-          rows={2}
-        />
-        <button
-          type="submit"
-          className="mt-1 text-xs bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors"
-        >
-          📣 Post message
-        </button>
-      </form>
-    </div>
-  )
-}
