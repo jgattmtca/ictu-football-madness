@@ -49,29 +49,34 @@ export default async function AdminPage() {
             {competitions.map((comp: any) => (
               <div
                 key={comp.id}
-                className="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between"
+                className="bg-white rounded-xl border border-gray-200 p-4"
               >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-900">{comp.name}</span>
-                    {comp.is_active && (
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Active</span>
-                    )}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-900">{comp.name}</span>
+                      {comp.is_active && (
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Active</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      /{comp.slug} · {comp.participants?.[0]?.count ?? 0} participants
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    /{comp.slug} · {comp.participants?.[0]?.count ?? 0} participants
+                  <div className="flex flex-col gap-2 items-end">
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={`/dashboard/${comp.slug}`}
+                        target="_blank"
+                        className="text-xs text-green-600 hover:underline"
+                      >
+                        View dashboard ↗
+                      </Link>
+                      <SendEmailButton competitionId={comp.id} />
+                      <SyncScoresButton competitionId={comp.id} />
+                    </div>
+                    <MessageBoard competitionId={comp.id} />
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Link
-                    href={`/dashboard/${comp.slug}`}
-                    target="_blank"
-                    className="text-xs text-green-600 hover:underline"
-                  >
-                    View dashboard ↗
-                  </Link>
-                  <SendEmailButton competitionId={comp.id} />
-                  <SyncScoresButton competitionId={comp.id} />
                 </div>
               </div>
             ))}
@@ -112,5 +117,39 @@ function SyncScoresButton({ competitionId }: { competitionId: string }) {
         🔄 Sync scores
       </button>
     </form>
+  )
+}
+
+function MessageBoard({ competitionId }: { competitionId: string }) {
+  return (
+    <div className="mt-1 w-full">
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault()
+          const form = e.target as HTMLFormElement
+          const message = (form.elements.namedItem('message') as HTMLTextAreaElement).value
+          await fetch('/api/admin/message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, competitionId }),
+          })
+          alert('Message updated!')
+        }}
+        className="mt-1"
+      >
+        <textarea
+          name="message"
+          placeholder="Type a message for all participants... 😈"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+          rows={2}
+        />
+        <button
+          type="submit"
+          className="mt-1 text-xs bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors"
+        >
+          📣 Post message
+        </button>
+      </form>
+    </div>
   )
 }
