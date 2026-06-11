@@ -47,33 +47,44 @@ export default async function AdminPage() {
             {competitions.map((comp: any) => (
               <div
                 key={comp.id}
-                className="bg-white rounded-xl border border-gray-200 p-4"
+                className="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">{comp.name}</span>
-                      {comp.is_active && (
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Active</span>
-                      )}
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      /{comp.slug} · {comp.participants?.[0]?.count ?? 0} participants
-                    </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-900">{comp.name}</span>
+                    {comp.is_active && (
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Active</span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Link
-                      href={`/dashboard/${comp.slug}`}
-                      target="_blank"
-                      className="text-xs text-green-600 hover:underline"
-                    >
-                      View dashboard ↗
-                    </Link>
-                    <SendEmailButton competitionId={comp.id} />
-                    <SyncScoresButton competitionId={comp.id} />
+                  <div className="text-xs text-gray-400 mt-1">
+                    /{comp.slug} · {comp.participants?.[0]?.count ?? 0} participants
                   </div>
                 </div>
-                <MessageBoard competitionId={comp.id} />
+                <div className="flex items-center gap-3">
+                  <Link
+                    href={`/dashboard/${comp.slug}`}
+                    target="_blank"
+                    className="text-xs text-green-600 hover:underline"
+                  >
+                    View dashboard ↗
+                  </Link>
+                  <form action={`/api/email/send?competitionId=${comp.id}`} method="POST">
+                    <button type="submit" className="text-xs bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors">
+                      📧 Email standings
+                    </button>
+                  </form>
+                  <form action={`/api/scores/recalculate?competitionId=${comp.id}`} method="POST">
+                    <button type="submit" className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">
+                      🔄 Sync scores
+                    </button>
+                  </form>
+                  <Link
+                    href="/admin/coadmin"
+                    className="text-xs bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors"
+                  >
+                    📣 Message board
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
@@ -86,64 +97,6 @@ export default async function AdminPage() {
           </div>
         )}
       </div>
-    </div>
-  )
-}
-
-function SendEmailButton({ competitionId }: { competitionId: string }) {
-  return (
-    <form action={`/api/email/send?competitionId=${competitionId}`} method="POST">
-      <button
-        type="submit"
-        className="text-xs bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors"
-      >
-        📧 Email standings
-      </button>
-    </form>
-  )
-}
-
-function SyncScoresButton({ competitionId }: { competitionId: string }) {
-  return (
-    <form action={`/api/scores/recalculate?competitionId=${competitionId}`} method="POST">
-      <button
-        type="submit"
-        className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
-      >
-        🔄 Sync scores
-      </button>
-    </form>
-  )
-}
-
-function MessageBoard({ competitionId }: { competitionId: string }) {
-  return (
-    <div className="flex gap-2 mt-1">
-      <form
-        action={`/api/admin/message-form?competitionId=${competitionId}`}
-        method="POST"
-        className="flex-1 flex gap-2"
-      >
-        <input
-          name="message"
-          placeholder="Type a message for all participants... 😈"
-          className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-        />
-        <button
-          type="submit"
-          className="text-xs bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors"
-        >
-          📣 Post
-        </button>
-      </form>
-      <form action={`/api/admin/message-form?competitionId=${competitionId}&clear=true`} method="POST">
-        <button
-          type="submit"
-          className="text-xs bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors"
-        >
-          🗑️
-        </button>
-      </form>
     </div>
   )
 }
