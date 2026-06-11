@@ -1,8 +1,8 @@
-{
+json{
   "crons": [
     {
       "path": "/api/sync/scores",
-      "schedule": "0 * * * *"
+      "schedule": "0 12 * * *"
     }
   ]
 }
