@@ -20,7 +20,12 @@ export default function AdminLoginPage() {
     })
 
     if (res.ok) {
-      router.push('/admin')
+      const data = await res.json()
+      if (data.role === 'coadmin') {
+        router.push('/admin/coadmin')
+      } else {
+        router.push('/admin')
+      }
       router.refresh()
     } else {
       setError('Incorrect password')
@@ -45,7 +50,7 @@ export default function AdminLoginPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="Enter admin password"
+              placeholder="Enter password"
               autoFocus
             />
           </div>
