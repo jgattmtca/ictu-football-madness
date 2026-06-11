@@ -53,14 +53,12 @@ export default function CoAdminPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md space-y-6">
-        {/* Header */}
         <div className="text-center">
           <div className="text-4xl mb-2">⚽</div>
           <h1 className="text-xl font-bold text-gray-900">ICTU Football Madness</h1>
           <p className="text-gray-400 text-sm mt-1">Co-admin panel</p>
         </div>
 
-        {/* Sync scores */}
         <div className="bg-white rounded-2xl border border-gray-200 p-5">
           <h2 className="font-semibold text-gray-800 mb-1">🔄 Sync scores</h2>
           <p className="text-gray-400 text-sm mb-4">
@@ -78,7 +76,6 @@ export default function CoAdminPage() {
           )}
         </div>
 
-        {/* Message board */}
         <div className="bg-white rounded-2xl border border-gray-200 p-5">
           <h2 className="font-semibold text-gray-800 mb-1">📣 Post a message</h2>
           <p className="text-gray-400 text-sm mb-4">
@@ -105,12 +102,8 @@ export default function CoAdminPage() {
           )}
         </div>
 
-        {/* Dashboard link */}
         <div className="text-center">
-          
-            href="/dashboard/wc2026"
-            className="text-green-600 text-sm hover:underline"
-          >
+          <a href="/dashboard/wc2026" className="text-green-600 text-sm hover:underline">
             View leaderboard →
           </a>
         </div>
