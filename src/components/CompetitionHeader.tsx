@@ -1,5 +1,6 @@
 'use client'
 import { Competition } from '@/types'
+import Link from 'next/link'
 
 interface Props { competition: Competition }
 
@@ -14,13 +15,19 @@ export default function CompetitionHeader({ competition }: Props) {
             <p className="text-green-400/70 text-xs">ICTU Football Madness</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {competition.is_active && (
             <span className="flex items-center gap-1.5 text-xs text-green-400 bg-green-900/50 border border-green-700/50 px-2.5 py-1 rounded-full">
               <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
               Live
             </span>
           )}
+          <Link
+            href="/admin"
+            className="text-xs text-white/30 hover:text-white/60 transition-colors"
+          >
+            Admin ⚙️
+          </Link>
         </div>
       </div>
     </header>
