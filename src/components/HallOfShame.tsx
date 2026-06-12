@@ -3,17 +3,20 @@ import { useState, useEffect } from 'react'
 import { LeaderboardEntry } from '@/types'
 import Avatar from './Avatar'
 
+interface ShameEntry {
+  participant: any
+  homeTeam: string
+  awayTeam: string
+  predictedHome: number
+  predictedAway: number
+  actualHome: number
+  actualAway: number
+  shameScore: number
+}
+
 interface ShameData {
-  howler: {
-    participant: any
-    homeTeam: string
-    awayTeam: string
-    predictedHome: number
-    predictedAway: number
-    actualHome: number
-    actualAway: number
-    shameScore: number
-  } | null
+  howler: ShameEntry | null
+  shameTop3: ShameEntry[]
   coldStreak: {
     participant: any
     matchesWithoutPoints: number
@@ -46,13 +49,11 @@ export default function HallOfShame({ leaderboard, competitionId }: Props) {
       .catch(() => {})
   }, [competitionId])
 
-  // Build bottom 3 from leaderboard
   const bottom3 = leaderboard
     .filter(e => e.score.total_points >= 0)
     .slice(-3)
     .reverse()
 
-  // Fun stats from leaderboard
   const totalPlayers = leaderboard.length
   const mbappeCount = leaderboard.filter(e =>
     e.special?.golden_boot_player?.toLowerCase().includes('mbappe')
@@ -67,7 +68,7 @@ export default function HallOfShame({ leaderboard, competitionId }: Props) {
     : 0
 
   if (leaderboard.every(e => e.score.total_points === 0)) {
-    return null // Don't show before competition starts
+    return null
   }
 
   return (
@@ -86,32 +87,41 @@ export default function HallOfShame({ leaderboard, competitionId }: Props) {
 
       {expanded && (
         <div className="space-y-4">
-          {/* Howler of the week */}
-          {shame?.howler && (
+
+          {/* Top 3 shame — CHANGE TITLE HERE when you decide on a name */}
+          {shame?.shameTop3 && shame.shameTop3.length > 0 && (
             <ShameCard
-              title="🤦 Howler of the week"
-              subtitle="Worst prediction so far"
+              title="😈 Disaster Zone"
+              subtitle="Cumulative worst predictors"
               color="red"
             >
-              <div className="mt-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Avatar participant={shame.howler.participant} size="sm" />
-                  <span className="text-white font-medium">{shame.howler.participant.name}</span>
-                </div>
-                <div className="bg-black/30 rounded-xl p-3 text-center">
-                  <p className="text-white/60 text-xs mb-1">{shame.howler.homeTeam} vs {shame.howler.awayTeam}</p>
-                  <div className="flex items-center justify-center gap-4">
-                    <div>
-                      <p className="text-xs text-green-400/60">Predicted</p>
-                      <p className="text-white font-bold">{shame.howler.predictedHome} – {shame.howler.predictedAway}</p>
+              <div className="mt-3 space-y-4">
+                {shame.shameTop3.map((entry: ShameEntry, i: number) => (
+                  <div key={entry.participant.id}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">{i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</span>
+                      <Avatar participant={entry.participant} size="sm" />
+                      <span className="text-white font-medium">{entry.participant.name}</span>
+                      <span className="ml-auto text-red-400 font-bold text-sm">{entry.shameScore} 😬</span>
                     </div>
-                    <span className="text-white/20 text-xl">→</span>
-                    <div>
-                      <p className="text-xs text-red-400/60">Actual</p>
-                      <p className="text-red-300 font-bold">{shame.howler.actualHome} – {shame.howler.actualAway}</p>
-                    </div>
+                    {entry.homeTeam && (
+                      <div className="bg-black/30 rounded-xl p-2 text-center ml-8">
+                        <p className="text-white/40 text-xs mb-1">{entry.homeTeam} vs {entry.awayTeam}</p>
+                        <div className="flex items-center justify-center gap-3">
+                          <div className="text-center">
+                            <p className="text-xs text-green-400/60">Predicted</p>
+                            <p className="text-white text-xs font-bold">{entry.predictedHome} – {entry.predictedAway}</p>
+                          </div>
+                          <span className="text-white/20">→</span>
+                          <div className="text-center">
+                            <p className="text-xs text-red-400/60">Actual</p>
+                            <p className="text-red-300 text-xs font-bold">{entry.actualHome} – {entry.actualAway}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
+                ))}
               </div>
             </ShameCard>
           )}
@@ -179,7 +189,7 @@ export default function HallOfShame({ leaderboard, competitionId }: Props) {
               {leaderboard.length > 0 && (
                 <StatLine
                   icon="🎯"
-                  text={`Best accuracy: ${leaderboard.sort((a,b) => b.score.accuracy_pct - a.score.accuracy_pct)[0]?.participant.name} at ${Math.round(leaderboard[0]?.score.accuracy_pct ?? 0)}%`}
+                  text={`Best accuracy: ${[...leaderboard].sort((a,b) => b.score.accuracy_pct - a.score.accuracy_pct)[0]?.participant.name} at ${Math.round([...leaderboard].sort((a,b) => b.score.accuracy_pct - a.score.accuracy_pct)[0]?.score.accuracy_pct ?? 0)}%`}
                 />
               )}
             </div>

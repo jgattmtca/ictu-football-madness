@@ -5,7 +5,6 @@ export async function GET(req: NextRequest) {
   const competitionId = req.nextUrl.searchParams.get('competitionId')
   if (!competitionId) return NextResponse.json({ error: 'competitionId required' }, { status: 400 })
 
-  // Get all finished matches
   const { data: matches } = await supabaseAdmin
     .from('matches')
     .select('*')
@@ -17,13 +16,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ howler: null, coldStreak: null, funStats: [] })
   }
 
-  // Get all predictions
   const { data: predictions } = await supabaseAdmin
     .from('predictions')
     .select('*')
     .eq('competition_id', competitionId)
 
-  // Get participants
   const { data: participants } = await supabaseAdmin
     .from('participants')
     .select('*')
@@ -36,10 +33,13 @@ export async function GET(req: NextRequest) {
   const participantMap = new Map(participants.map(p => [p.id, p]))
   const matchMap = new Map(matches.map(m => [m.id, m]))
 
-  // ── Find the Howler ─────────────────────────────────────────────────────────
-  // Worst prediction = largest combined goal difference between prediction and actual
-  let worstShameScore = 0
-  let howler = null
+  // ── Cumulative shame score per participant ──────────────────────────────────
+  const shameScores = new Map<string, {
+    totalShame: number
+    worstMatch: any
+    worstShame: number
+    participant: any
+  }>()
 
   for (const pred of predictions) {
     const match = matchMap.get(pred.match_id)
@@ -49,57 +49,67 @@ export async function GET(req: NextRequest) {
     const participant = participantMap.get(pred.participant_id)
     if (!participant) continue
 
-    // Shame score = how wrong they were (total goal difference combined)
     const shameScore =
       Math.abs(pred.home_score - match.home_score) +
       Math.abs(pred.away_score - match.away_score)
 
-    // Bonus shame: predicted wrong winner by a huge margin
-    const predictedResult = Math.sign(pred.home_score - pred.away_score)
-    const actualResult = Math.sign(match.home_score - match.away_score)
-    const wrongResult = predictedResult !== actualResult ? 2 : 0
-
+    const wrongResult = Math.sign(pred.home_score - pred.away_score) !== Math.sign(match.home_score - match.away_score) ? 2 : 0
     const totalShame = shameScore + wrongResult
 
-    if (totalShame > worstShameScore) {
-      worstShameScore = totalShame
-      howler = {
-        participant,
+    const existing = shameScores.get(pred.participant_id) ?? {
+      totalShame: 0,
+      worstMatch: null,
+      worstShame: 0,
+      participant,
+    }
+
+    existing.totalShame += totalShame
+
+    // Track their single worst prediction too (for display)
+    if (totalShame > existing.worstShame) {
+      existing.worstShame = totalShame
+      existing.worstMatch = {
         homeTeam: match.home_team,
         awayTeam: match.away_team,
         predictedHome: pred.home_score,
         predictedAway: pred.away_score,
         actualHome: match.home_score,
         actualAway: match.away_score,
-        shameScore: totalShame,
       }
     }
+
+    shameScores.set(pred.participant_id, existing)
   }
 
-  // ── Find the Cold Streak ─────────────────────────────────────────────────────
-  // Who has gone the most consecutive finished matches without scoring any points
+ // Find top 3 cumulative shame scores
+  const shameList = Array.from(shameScores.entries())
+    .map(([, data]) => ({
+      participant: data.participant,
+      ...data.worstMatch,
+      shameScore: data.totalShame,
+    }))
+    .sort((a, b) => b.shameScore - a.shameScore)
+    .slice(0, 3)
+
+  const howler = shameList[0] ?? null
+  const shameTop3 = shameList
+
+  // ── Cold streak ─────────────────────────────────────────────────────────────
   let worstStreak = 0
   let coldStreakParticipant = null
 
   for (const participant of participants) {
     const myPreds = predictions.filter(p => p.participant_id === participant.id)
-
-    // Go through matches in order, count consecutive blanks from most recent
     let streak = 0
     for (const match of [...matches].reverse()) {
       const pred = myPreds.find(p => p.match_id === match.id)
       if (!pred || pred.home_score === null || pred.away_score === null) continue
-
       const predResult = Math.sign(pred.home_score - pred.away_score)
       const actualResult = Math.sign(match.home_score - match.away_score)
       const exactMatch = pred.home_score === match.home_score && pred.away_score === match.away_score
-
-      if (exactMatch || predResult === actualResult) {
-        break // Ended the streak
-      }
+      if (exactMatch || predResult === actualResult) break
       streak++
     }
-
     if (streak > worstStreak) {
       worstStreak = streak
       coldStreakParticipant = participant
@@ -108,6 +118,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     howler,
+    shameTop3,
     coldStreak: coldStreakParticipant
       ? { participant: coldStreakParticipant, matchesWithoutPoints: worstStreak }
       : null,
