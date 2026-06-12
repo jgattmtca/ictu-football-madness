@@ -64,8 +64,11 @@ export default function RaceTrack({ leaderboard }: Props) {
                   )}
                 </div>
 
-                {/* Avatar */}
-                <Avatar participant={entry.participant} size="sm" isLeader={isLeader} />
+                 {/* Avatar + Name */}
+                <div className="flex items-center gap-2 w-32 flex-shrink-0">
+                  <Avatar participant={entry.participant} size="sm" isLeader={isLeader} />
+                  <span className="text-white/80 text-xs truncate">{entry.participant.name}</span>
+                </div>
 
                 {/* Lane */}
                 <div className="flex-1 race-lane h-10 flex items-center">
