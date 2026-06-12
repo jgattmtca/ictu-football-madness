@@ -46,7 +46,7 @@ export default function RaceTrack({ leaderboard }: Props) {
   }
 
   const maxPoints = Math.max(...leaderboard.map(e => e.score.total_points), 1)
-  const topEntries = leaderboard.slice(0, Math.min(leaderboard.length, 12))
+  const topEntries = leaderboard
 
   return (
     <>
@@ -122,12 +122,7 @@ export default function RaceTrack({ leaderboard }: Props) {
               )
             })}
 
-            {leaderboard.length > 12 && (
-              <p className="text-center text-green-600/50 text-xs pt-2">
-                +{leaderboard.length - 12} more in the table below
-              </p>
-            )}
-          </div>
+            </div>
 
           <div className="flex items-center gap-0 px-6 pb-4 pt-1">
             <div className="flex-1 h-px bg-white/5" />
