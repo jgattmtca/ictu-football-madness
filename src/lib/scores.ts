@@ -1,114 +1,97 @@
 import { supabaseAdmin } from './supabase'
-import { calculateMatchPoints } from './excel-parser'
-import { ScoringRules } from '@/types'
 
-/**
- * Recalculates all scores for a competition.
- * Called after new results come in or predictions are uploaded.
- */
 export async function recalculateScores(competitionId: string) {
-  // Fetch competition scoring rules
-  const { data: comp } = await supabaseAdmin
-    .from('competitions')
-    .select('scoring')
-    .eq('id', competitionId)
-    .single()
-
-  if (!comp) throw new Error('Competition not found')
-  const rules: ScoringRules = comp.scoring
+  // Reset all scores to 0
+  await supabaseAdmin
+    .from('scores')
+    .update({
+      total_points: 0,
+      exact_scores: 0,
+      correct_results: 0,
+      accuracy_pct: 0,
+      last_updated: new Date().toISOString(),
+    })
+    .eq('competition_id', competitionId)
 
   // Fetch all finished matches
   const { data: matches } = await supabaseAdmin
     .from('matches')
-    .select('*')
+    .select('id, home_score, away_score')
     .eq('competition_id', competitionId)
     .eq('status', 'finished')
 
-  // Fetch all participants
-  const { data: participants } = await supabaseAdmin
-    .from('participants')
-    .select('*')
-    .eq('competition_id', competitionId)
+  if (!matches || matches.length === 0) return
 
-  // Fetch all predictions
+  // Fetch all predictions for finished matches
+  const matchIds = matches.map((m: any) => m.id)
   const { data: predictions } = await supabaseAdmin
     .from('predictions')
-    .select('*')
-    .eq('competition_id', competitionId)
+    .select('participant_id, match_id, home_score, away_score')
+    .in('match_id', matchIds)
+    .not('home_score', 'is', null)
+    .not('away_score', 'is', null)
 
-  // Fetch special predictions
-  const { data: specials } = await supabaseAdmin
-    .from('special_predictions')
-    .select('*')
-    .eq('competition_id', competitionId)
-
-  if (!participants || !matches || !predictions) return
+  if (!predictions || predictions.length === 0) return
 
   // Build match lookup
-  const matchMap = new Map((matches || []).map(m => [m.id, m]))
+  const matchMap = new Map(matches.map((m: any) => [m.id, m]))
 
-  for (const participant of participants) {
-    const myPreds = (predictions || []).filter(p => p.participant_id === participant.id)
-    const mySpecial = (specials || []).find(s => s.participant_id === participant.id)
+  // Calculate points per participant
+  const participantScores = new Map<string, {
+    total_points: number
+    exact_scores: number
+    correct_results: number
+    scored_matches: number
+  }>()
 
-    let totalPoints = 0
-    let exactScores = 0
-    let correctResults = 0
-    let scoredMatches = 0
+  for (const pred of predictions) {
+    const match = matchMap.get(pred.match_id) as any
+    if (!match) continue
 
-    for (const pred of myPreds) {
-      const match = matchMap.get(pred.match_id)
-      if (!match || match.status !== 'finished') continue
-
-      scoredMatches++
-      const pts = calculateMatchPoints(
-        pred.home_score, pred.away_score,
-        match.home_score, match.away_score,
-        rules
-      )
-      totalPoints += pts
-
-      if (pts === rules.exact_score) exactScores++
-      else if (pts === rules.correct_result) correctResults++
+    const existing = participantScores.get(pred.participant_id) ?? {
+      total_points: 0,
+      exact_scores: 0,
+      correct_results: 0,
+      scored_matches: 0,
     }
 
-    // Special predictions bonus
-    // Tournament winner — compare against the final match winner once it's done
-    // For now we check special_predictions.tournament_winner vs actual winner
-    // (This is set manually by admin when competition ends)
-    const { data: compData } = await supabaseAdmin
-      .from('competitions')
-      .select('actual_winner, actual_golden_boot')
-      .eq('id', competitionId)
-      .single()
+    existing.scored_matches++
 
-    if (compData) {
-      if (mySpecial?.tournament_winner && compData.actual_winner &&
-          mySpecial.tournament_winner.toLowerCase() === compData.actual_winner.toLowerCase()) {
-        totalPoints += rules.tournament_winner
-      }
-      if (mySpecial?.golden_boot_player && compData.actual_golden_boot &&
-          mySpecial.golden_boot_player.toLowerCase() === compData.actual_golden_boot.toLowerCase()) {
-        totalPoints += rules.golden_boot
-      }
+    const exactMatch =
+      pred.home_score === match.home_score &&
+      pred.away_score === match.away_score
+
+    const correctResult =
+      Math.sign(pred.home_score - pred.away_score) ===
+      Math.sign(match.home_score - match.away_score)
+
+    if (exactMatch) {
+      existing.total_points += 5
+      existing.exact_scores++
+    } else if (correctResult) {
+      existing.total_points += 3
+      existing.correct_results++
     }
 
-    // Accuracy = (exact + correct) / total scored matches
-    const accuracyPct = scoredMatches > 0
-      ? Math.round(((exactScores + correctResults) / scoredMatches) * 100 * 100) / 100
+    participantScores.set(pred.participant_id, existing)
+  }
+
+  // Update scores table
+  for (const [participantId, score] of participantScores.entries()) {
+    const accuracyPct = score.scored_matches > 0
+      ? Math.round(((score.exact_scores + score.correct_results) / score.scored_matches) * 100 * 100) / 100
       : 0
 
-    // Upsert score
     await supabaseAdmin
       .from('scores')
-      .upsert({
-        competition_id: competitionId,
-        participant_id: participant.id,
-        total_points: totalPoints,
-        exact_scores: exactScores,
-        correct_results: correctResults,
+      .update({
+        total_points: score.total_points,
+        exact_scores: score.exact_scores,
+        correct_results: score.correct_results,
         accuracy_pct: accuracyPct,
         last_updated: new Date().toISOString(),
-      }, { onConflict: 'participant_id,competition_id' })
+      })
+      .eq('competition_id', competitionId)
+      .eq('participant_id', participantId)
   }
 }
