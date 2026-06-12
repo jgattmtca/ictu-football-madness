@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { recalculateScores } from '@/lib/scores'
-import { syncMatchResults } from '@/lib/football-api'
 
 function isAuthed(req: NextRequest) {
   const adminAuth = req.cookies.get('admin_auth')?.value === process.env.ADMIN_PASSWORD
@@ -15,12 +14,7 @@ export async function POST(req: NextRequest) {
   if (!competitionId) return NextResponse.json({ error: 'competitionId required' }, { status: 400 })
 
   try {
-    // Step 1 — Fetch latest results from football-data.org
-    await syncMatchResults(competitionId)
-
-    // Step 2 — Recalculate everyone's points
     await recalculateScores(competitionId)
-
     return NextResponse.json({ ok: true })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
