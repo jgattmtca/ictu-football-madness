@@ -1,7 +1,6 @@
 import { supabaseAdmin } from './supabase'
 
 export async function recalculateScores(competitionId: string) {
-  // Reset all scores to 0
   await supabaseAdmin
     .from('scores')
     .update({
@@ -13,7 +12,6 @@ export async function recalculateScores(competitionId: string) {
     })
     .eq('competition_id', competitionId)
 
-  // Fetch all finished matches
   const { data: matches } = await supabaseAdmin
     .from('matches')
     .select('id, home_score, away_score')
@@ -22,7 +20,6 @@ export async function recalculateScores(competitionId: string) {
 
   if (!matches || matches.length === 0) return
 
-  // Fetch all predictions for finished matches
   const matchIds = matches.map((m: any) => m.id)
   const { data: predictions } = await supabaseAdmin
     .from('predictions')
@@ -33,10 +30,8 @@ export async function recalculateScores(competitionId: string) {
 
   if (!predictions || predictions.length === 0) return
 
-  // Build match lookup
   const matchMap = new Map(matches.map((m: any) => [m.id, m]))
 
-  // Calculate points per participant
   const participantScores = new Map<string, {
     total_points: number
     exact_scores: number
@@ -76,7 +71,6 @@ export async function recalculateScores(competitionId: string) {
     participantScores.set(pred.participant_id, existing)
   }
 
-  // Update scores table
   for (const [participantId, score] of participantScores.entries()) {
     const accuracyPct = score.scored_matches > 0
       ? Math.round(((score.exact_scores + score.correct_results) / score.scored_matches) * 100 * 100) / 100
