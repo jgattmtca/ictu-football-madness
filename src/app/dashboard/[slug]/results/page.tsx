@@ -16,18 +16,6 @@ interface Fixture {
   utcDate?: string
 }
 
-interface Standing {
-  rank?: number
-  team?: { name: string; logo?: string }
-  teamName?: string
-  points?: number
-  all?: { played: number; win: number; draw: number; lose: number; goals: { for: number; against: number } }
-  played?: number; won?: number; drawn?: number; lost?: number
-  goalsFor?: number; goalsAgainst?: number
-  goalsDiff?: number
-  group?: string
-}
-
 interface TopScorer {
   player?: { name: string; nationality?: string }
   playerName?: string
@@ -222,7 +210,6 @@ function MatchCard({ fixture, highlight = false, upcoming = false }: {
   const isLive = ['IN_PLAY', 'PAUSED', '1H', '2H', 'HT', 'ET', 'P', 'LIVE'].includes(statusRaw)
   const elapsed = fixture.fixture?.status?.elapsed
 
-  // Format match time from utcDate
   const matchTime = fixture.utcDate
     ? new Date(fixture.utcDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : null
@@ -232,9 +219,7 @@ function MatchCard({ fixture, highlight = false, upcoming = false }: {
 
   return (
     <div className={`rounded-2xl border p-4 transition-all ${
-      highlight
-        ? 'bg-red-900/20 border-red-500/30'
-        : 'bg-black/30 border-white/10'
+      highlight ? 'bg-red-900/20 border-red-500/30' : 'bg-black/30 border-white/10'
     }`}>
       {matchDate && (
         <p className="text-center text-green-400/40 text-xs mb-2">{matchDate} {matchTime}</p>
@@ -243,7 +228,6 @@ function MatchCard({ fixture, highlight = false, upcoming = false }: {
         <div className="flex-1 text-right">
           <span className="text-white font-medium text-sm sm:text-base">{homeTeam}</span>
         </div>
-
         <div className="mx-4 flex-shrink-0 text-center min-w-[80px]">
           {upcoming ? (
             <span className="text-green-400/60 text-sm">vs</span>
@@ -263,7 +247,6 @@ function MatchCard({ fixture, highlight = false, upcoming = false }: {
             <div className="text-green-500/40 text-xs mt-1">{statusRaw}</div>
           )}
         </div>
-
         <div className="flex-1 text-left">
           <span className="text-white font-medium text-sm sm:text-base">{awayTeam}</span>
         </div>
@@ -281,7 +264,10 @@ function StandingsView({ standings }: { standings: any[] }) {
   for (const item of standings) {
     const group = item.group ?? item.stage ?? 'Group Stage'
     if (!groups[group]) groups[group] = []
-    groups[group].push(item)
+    const teams = item.table ?? [item]
+    for (const team of teams) {
+      groups[group].push(team)
+    }
   }
 
   return (
@@ -307,17 +293,17 @@ function StandingsView({ standings }: { standings: any[] }) {
               </tr>
             </thead>
             <tbody>
-              {teams.map((team, i) => {
+              {teams.map((team: any, i: number) => {
                 const name = team.team?.name ?? team.teamName ?? '?'
-                const rank = team.rank ?? i + 1
+                const rank = team.position ?? team.rank ?? i + 1
                 const pts = team.points ?? 0
-                const played = team.all?.played ?? team.played ?? team.playedGames ?? 0
-                const won = team.all?.win ?? team.won ?? team.won ?? 0
-                const drawn = team.all?.draw ?? team.drawn ?? team.draw ?? 0
-                const lost = team.all?.lose ?? team.lost ?? team.lost ?? 0
-                const gf = team.all?.goals?.for ?? team.goalsFor ?? 0
-                const ga = team.all?.goals?.against ?? team.goalsAgainst ?? 0
-                const gd = team.goalsDifference ?? team.goalsDiff ?? (gf - ga)
+                const played = team.playedGames ?? team.all?.played ?? team.played ?? 0
+                const won = team.won ?? team.all?.win ?? 0
+                const drawn = team.draw ?? team.all?.draw ?? 0
+                const lost = team.lost ?? team.all?.lose ?? 0
+                const gf = team.goalsFor ?? team.all?.goals?.for ?? 0
+                const ga = team.goalsAgainst ?? team.all?.goals?.against ?? 0
+                const gd = team.goalDifference ?? team.goalsDiff ?? (gf - ga)
                 const isQualifying = rank <= 2
 
                 return (
@@ -364,10 +350,10 @@ function TopScorersView({ scorers }: { scorers: TopScorer[] }) {
           </tr>
         </thead>
         <tbody>
-          {scorers.slice(0, 20).map((s, i) => {
+          {scorers.slice(0, 20).map((s: any, i: number) => {
             const name = s.player?.name ?? s.playerName ?? '?'
-            const team = s.statistics?.[0]?.team?.name ?? s.teamName ?? '?'
-            const goals = s.statistics?.[0]?.goals?.total ?? s.goals ?? 0
+            const team = s.team?.name ?? s.statistics?.[0]?.team?.name ?? s.teamName ?? '?'
+            const goals = s.goals ?? s.statistics?.[0]?.goals?.total ?? 0
             const isLeader = i === 0
 
             return (
