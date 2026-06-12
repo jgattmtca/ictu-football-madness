@@ -71,7 +71,7 @@ export async function recalculateScores(competitionId: string) {
     participantScores.set(pred.participant_id, existing)
   }
 
-  for (const [participantId, score] of participantScores.entries()) {
+  for (const [participantId, score] of Array.from(participantScores.entries())) {
     const accuracyPct = score.scored_matches > 0
       ? Math.round(((score.exact_scores + score.correct_results) / score.scored_matches) * 100 * 100) / 100
       : 0
