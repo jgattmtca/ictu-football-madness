@@ -1,32 +1,17 @@
 import { supabaseAdmin } from './supabase'
 
-const API_KEY = process.env.API_FOOTBALL_KEY!
-const BASE_URL = 'https://free-api-live-football-data.p.rapidapi.com'
-
-// League IDs for Free API Live Football Data (by Smart API on RapidAPI)
-// World Cup = 17, Euros = 9, Champions League = 2
-const LEAGUE_IDS: Record<string, number> = {
-  wc: 17,
-  euros: 9,
-  ucl: 2,
-}
+const API_TOKEN = process.env.API_FOOTBALL_KEY!
+const BASE_URL = 'https://api.football-data.org/v4'
 
 async function apiFetch(path: string) {
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: {
-      'x-rapidapi-key': API_KEY,
-      'x-rapidapi-host': 'free-api-live-football-data.p.rapidapi.com',
-    },
+    headers: { 'X-Auth-Token': API_TOKEN },
     next: { revalidate: 60 },
   })
   if (!res.ok) throw new Error(`Football API error: ${res.status}`)
   return res.json()
 }
 
-/**
- * Syncs live/finished match results for a competition.
- * Called by the /api/sync/scores route (cron job every 5 min).
- */
 export async function syncMatchResults(competitionId: string) {
   const { data: comp } = await supabaseAdmin
     .from('competitions')
@@ -36,35 +21,26 @@ export async function syncMatchResults(competitionId: string) {
 
   if (!comp) throw new Error('Competition not found')
 
-  // Determine league ID from slug prefix
-  const slugPrefix = comp.slug.replace(/\d+/g, '').toLowerCase()
-  const leagueId = LEAGUE_IDS[slugPrefix] ?? 17
-  const season = new Date(comp.start_date || Date.now()).getFullYear()
+  // Fetch all WC matches
+  const data = await apiFetch('/competitions/WC/matches')
+  const matches = data?.matches ?? []
 
-  // Fetch today's fixtures
-  const today = new Date().toISOString().split('T')[0]
-  const data = await apiFetch(`/fixtures-by-date-and-league-and-season?leagueid=${leagueId}&date=${today}&season=${season}`)
-
-  // Smart API response format: data.response is an array of fixtures
-  const fixtures = data?.response ?? data?.fixtures ?? []
   let updated = 0
 
-  for (const fixture of fixtures) {
-    // Smart API fixture shape
-    const homeTeam = fixture.teams?.home?.name ?? fixture.homeTeam?.name
-    const awayTeam = fixture.teams?.away?.name ?? fixture.awayTeam?.name
-    const homeGoals = fixture.goals?.home ?? fixture.score?.home ?? null
-    const awayGoals = fixture.goals?.away ?? fixture.score?.away ?? null
-    const statusShort = fixture.fixture?.status?.short ?? fixture.status?.short ?? fixture.status
+  for (const match of matches) {
+    const homeTeam = match.homeTeam?.name
+    const awayTeam = match.awayTeam?.name
+    const homeGoals = match.score?.fullTime?.home ?? null
+    const awayGoals = match.score?.fullTime?.away ?? null
+    const status = match.status
 
     if (!homeTeam || !awayTeam) continue
 
-    // Only process live or finished matches
-    const isFinished = ['FT', 'AET', 'PEN', 'FINISHED'].includes(statusShort)
-    const isLive = ['1H', '2H', 'HT', 'LIVE', 'ET', 'P'].includes(statusShort)
+    const isFinished = status === 'FINISHED'
+    const isLive = status === 'IN_PLAY' || status === 'PAUSED'
+
     if (!isFinished && !isLive) continue
 
-    // Match against our DB by team name (case-insensitive)
     const { data: dbMatch } = await supabaseAdmin
       .from('matches')
       .select('id, status')
@@ -88,5 +64,5 @@ export async function syncMatchResults(competitionId: string) {
     updated++
   }
 
-  return { updated, total: fixtures.length }
+  return { updated, total: matches.length }
 }
