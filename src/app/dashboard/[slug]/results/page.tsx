@@ -5,14 +5,15 @@ import Link from 'next/link'
 interface Props { params: { slug: string } }
 
 interface Fixture {
+  status?: string
   fixture?: { id: number; status?: { short: string; elapsed?: number } }
   teams?: { home: { name: string; logo?: string }; away: { name: string; logo?: string } }
   goals?: { home: number | null; away: number | null }
-  score?: { home: number | null; away: number | null }
+  score?: { home: number | null; away: number | null; fullTime?: { home: number | null; away: number | null } }
   date?: string
   homeTeam?: { name: string }
   awayTeam?: { name: string }
-  status?: string | { short: string }
+  utcDate?: string
 }
 
 interface Standing {
@@ -82,17 +83,14 @@ export default function ResultsPage({ params }: Props) {
     } catch {}
   }
 
-  // Normalise fixture data regardless of API shape
   function normaliseFixture(f: Fixture) {
     const homeTeam = f.teams?.home?.name ?? f.homeTeam?.name ?? 'TBD'
     const awayTeam = f.teams?.away?.name ?? f.awayTeam?.name ?? 'TBD'
-    const homeGoals = f.goals?.home ?? f.score?.home ?? null
-    const awayGoals = f.goals?.away ?? f.score?.away ?? null
-    const statusRaw = typeof f.fixture?.status === 'object'
-      ? f.fixture.status.short
-      : (typeof f.status === 'object' ? (f.status as any).short : f.status) ?? ''
-    const isFinished = ['FT', 'AET', 'PEN', 'FINISHED'].includes(statusRaw)
-    const isLive = ['1H', '2H', 'HT', 'ET', 'P', 'LIVE'].includes(statusRaw)
+    const homeGoals = f.score?.fullTime?.home ?? f.goals?.home ?? f.score?.home ?? null
+    const awayGoals = f.score?.fullTime?.away ?? f.goals?.away ?? f.score?.away ?? null
+    const statusRaw = f.status ?? f.fixture?.status?.short ?? ''
+    const isFinished = ['FINISHED', 'FT', 'AET', 'PEN'].includes(statusRaw)
+    const isLive = ['IN_PLAY', 'PAUSED', '1H', '2H', 'HT', 'ET', 'P', 'LIVE'].includes(statusRaw)
     const elapsed = f.fixture?.status?.elapsed
     return { homeTeam, awayTeam, homeGoals, awayGoals, statusRaw, isFinished, isLive, elapsed }
   }
@@ -113,7 +111,6 @@ export default function ResultsPage({ params }: Props) {
 
   return (
     <div className="min-h-screen pitch-bg">
-      {/* Header */}
       <header className="border-b border-white/10 bg-black/30 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -133,7 +130,6 @@ export default function ResultsPage({ params }: Props) {
       </header>
 
       <div className="max-w-5xl mx-auto px-4 py-6">
-        {/* Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
           {tabs.map(t => (
             <button
@@ -171,7 +167,6 @@ export default function ResultsPage({ params }: Props) {
 
         {!loading && !error && (
           <>
-            {/* Results tab */}
             {tab === 'results' && (
               <div className="space-y-3">
                 {live.length > 0 && (
@@ -192,7 +187,6 @@ export default function ResultsPage({ params }: Props) {
               </div>
             )}
 
-            {/* Upcoming tab */}
             {tab === 'upcoming' && (
               <div className="space-y-3">
                 {upcoming.length === 0 ? (
@@ -203,12 +197,10 @@ export default function ResultsPage({ params }: Props) {
               </div>
             )}
 
-            {/* Standings tab */}
             {tab === 'standings' && (
               <StandingsView standings={standings} />
             )}
 
-            {/* Top scorers tab */}
             {tab === 'topscorers' && (
               <TopScorersView scorers={topScorers} />
             )}
@@ -224,13 +216,19 @@ function MatchCard({ fixture, highlight = false, upcoming = false }: {
 }) {
   const homeTeam = fixture.teams?.home?.name ?? fixture.homeTeam?.name ?? 'TBD'
   const awayTeam = fixture.teams?.away?.name ?? fixture.awayTeam?.name ?? 'TBD'
-  const homeGoals = fixture.goals?.home ?? fixture.score?.home
-  const awayGoals = fixture.goals?.away ?? fixture.score?.away
-  const statusRaw = typeof fixture.fixture?.status === 'object'
-    ? fixture.fixture.status.short
-    : (typeof fixture.status === 'string' ? fixture.status : '')
+  const homeGoals = fixture.score?.fullTime?.home ?? fixture.goals?.home ?? fixture.score?.home
+  const awayGoals = fixture.score?.fullTime?.away ?? fixture.goals?.away ?? fixture.score?.away
+  const statusRaw = fixture.status ?? fixture.fixture?.status?.short ?? ''
+  const isLive = ['IN_PLAY', 'PAUSED', '1H', '2H', 'HT', 'ET', 'P', 'LIVE'].includes(statusRaw)
   const elapsed = fixture.fixture?.status?.elapsed
-  const isLive = ['1H', '2H', 'HT', 'ET', 'P', 'LIVE'].includes(statusRaw)
+
+  // Format match time from utcDate
+  const matchTime = fixture.utcDate
+    ? new Date(fixture.utcDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : null
+  const matchDate = fixture.utcDate
+    ? new Date(fixture.utcDate).toLocaleDateString([], { month: 'short', day: 'numeric' })
+    : null
 
   return (
     <div className={`rounded-2xl border p-4 transition-all ${
@@ -238,13 +236,14 @@ function MatchCard({ fixture, highlight = false, upcoming = false }: {
         ? 'bg-red-900/20 border-red-500/30'
         : 'bg-black/30 border-white/10'
     }`}>
+      {matchDate && (
+        <p className="text-center text-green-400/40 text-xs mb-2">{matchDate} {matchTime}</p>
+      )}
       <div className="flex items-center justify-between">
-        {/* Home team */}
         <div className="flex-1 text-right">
           <span className="text-white font-medium text-sm sm:text-base">{homeTeam}</span>
         </div>
 
-        {/* Score */}
         <div className="mx-4 flex-shrink-0 text-center min-w-[80px]">
           {upcoming ? (
             <span className="text-green-400/60 text-sm">vs</span>
@@ -265,7 +264,6 @@ function MatchCard({ fixture, highlight = false, upcoming = false }: {
           )}
         </div>
 
-        {/* Away team */}
         <div className="flex-1 text-left">
           <span className="text-white font-medium text-sm sm:text-base">{awayTeam}</span>
         </div>
@@ -279,7 +277,6 @@ function StandingsView({ standings }: { standings: any[] }) {
     return <EmptyState icon="📊" message="Standings not available yet." />
   }
 
-  // Handle both flat array and grouped by league/group
   const groups: Record<string, any[]> = {}
   for (const item of standings) {
     const group = item.group ?? item.stage ?? 'Group Stage'
@@ -314,13 +311,13 @@ function StandingsView({ standings }: { standings: any[] }) {
                 const name = team.team?.name ?? team.teamName ?? '?'
                 const rank = team.rank ?? i + 1
                 const pts = team.points ?? 0
-                const played = team.all?.played ?? team.played ?? 0
-                const won = team.all?.win ?? team.won ?? 0
-                const drawn = team.all?.draw ?? team.drawn ?? 0
-                const lost = team.all?.lose ?? team.lost ?? 0
+                const played = team.all?.played ?? team.played ?? team.playedGames ?? 0
+                const won = team.all?.win ?? team.won ?? team.won ?? 0
+                const drawn = team.all?.draw ?? team.drawn ?? team.draw ?? 0
+                const lost = team.all?.lose ?? team.lost ?? team.lost ?? 0
                 const gf = team.all?.goals?.for ?? team.goalsFor ?? 0
                 const ga = team.all?.goals?.against ?? team.goalsAgainst ?? 0
-                const gd = team.goalsDiff ?? (gf - ga)
+                const gd = team.goalsDifference ?? team.goalsDiff ?? (gf - ga)
                 const isQualifying = rank <= 2
 
                 return (
