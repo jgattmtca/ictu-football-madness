@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Step 6 - Update scores
-    for (const [participantId, score] of scores.entries()) {
+    for (const [participantId, score] of Array.from(scores.entries())) {
       const accuracyPct = score.scored_matches > 0
         ? Math.round(((score.exact_scores + score.correct_results) / score.scored_matches) * 100 * 100) / 100
         : 0
