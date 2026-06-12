@@ -7,7 +7,7 @@ import CompetitionHeader from '@/components/CompetitionHeader'
 import HallOfShame from '@/components/HallOfShame'
 import { LeaderboardEntry } from '@/types'
 
-export const revalidate = 300
+export const revalidate = 5
 
 interface Props { params: { slug: string } }
 
