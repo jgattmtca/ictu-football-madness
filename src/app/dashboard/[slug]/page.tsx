@@ -95,6 +95,12 @@ export default async function DashboardPage({ params }: Props) {
             </Link>
           </div>
 
+          {/* Hall of Shame */}
+          <HallOfShame
+            leaderboard={leaderboard}
+            competitionId={competition.id}
+          />
+
           {/* Rat race */}
           <section>
             <h2 className="text-green-300/70 text-sm font-medium uppercase tracking-widest mb-4">
@@ -110,12 +116,6 @@ export default async function DashboardPage({ params }: Props) {
             </h2>
             <ScoreTable leaderboard={leaderboard} />
           </section>
-
-          {/* Hall of Shame */}
-          <HallOfShame
-            leaderboard={leaderboard}
-            competitionId={competition.id}
-          />
 
         </div>
       )}
