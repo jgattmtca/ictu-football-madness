@@ -60,22 +60,18 @@ async function getLeaderboard(slug: string): Promise<{
   ]
 
   const leaderboard: LeaderboardEntry[] = allScores.map((score, index) => ({
-const leaderboard: LeaderboardEntry[] = allScores.map((score, index) => ({
     rank: index + 1,
     participant: participantMap.get(score.participant_id)!,
     score,
     special: specialMap.get(score.participant_id) || null,
   })).filter(e => e.participant)
   .sort((a, b) => {
-    // Primary: total points descending
     if (b.score.total_points !== a.score.total_points) {
       return b.score.total_points - a.score.total_points
     }
-    // Secondary: ladies first 😄
     const aFemale = a.participant.is_female ? 1 : 0
     const bFemale = b.participant.is_female ? 1 : 0
     if (bFemale !== aFemale) return bFemale - aFemale
-    // Tertiary: accuracy percentage
     return b.score.accuracy_pct - a.score.accuracy_pct
   })
   .map((entry, index) => ({ ...entry, rank: index + 1 }))
