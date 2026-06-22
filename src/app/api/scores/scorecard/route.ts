@@ -15,7 +15,8 @@ export async function GET(req: NextRequest) {
     .select('id, home_team, away_team, home_score, away_score, match_date')
     .eq('competition_id', competitionId)
     .eq('status', 'finished')
-    .order('match_date', { ascending: true })
+    .order('match_date', { ascending: false })
+    .order('home_team', { ascending: true })
 
   if (!matches || matches.length === 0) {
     return NextResponse.json({ scorecard: [] })
