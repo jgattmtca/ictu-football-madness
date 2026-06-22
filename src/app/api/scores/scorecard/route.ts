@@ -12,11 +12,10 @@ export async function GET(req: NextRequest) {
   // Get finished matches only
   const { data: matches } = await supabase
     .from('matches')
-    .select('id, home_team, away_team, home_score, away_score, match_date')
+    .select('id, home_team, away_team, home_score, away_score, match_date, api_match_id')
     .eq('competition_id', competitionId)
     .eq('status', 'finished')
-    .order('match_date', { ascending: false })
-    .order('home_team', { ascending: true })
+    .order('api_match_id', { ascending: false })
 
   if (!matches || matches.length === 0) {
     return NextResponse.json({ scorecard: [] })
