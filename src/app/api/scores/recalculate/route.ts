@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
       .in('match_id', matchIds)
       .not('home_score', 'is', null)
       .not('away_score', 'is', null)
+      .limit(10000)
 
     if (!predictions || predictions.length === 0) {
       return NextResponse.json({ ok: true, message: 'No predictions found' })
