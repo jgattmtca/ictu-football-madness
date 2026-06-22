@@ -27,6 +27,7 @@ export async function recalculateScores(competitionId: string) {
     .in('match_id', matchIds)
     .not('home_score', 'is', null)
     .not('away_score', 'is', null)
+    .limit(10000)
 
   if (!predictions || predictions.length === 0) return
 
