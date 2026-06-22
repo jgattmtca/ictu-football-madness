@@ -58,6 +58,8 @@ export async function syncMatchResults(competitionId: string) {
         home_score: homeGoals,
         away_score: awayGoals,
         status: isFinished ? 'finished' : 'live',
+        match_date: match.utcDate ? match.utcDate.split('T')[0] : null,
+        api_match_id: match.id ?? null,
       })
       .eq('id', dbMatch.id)
 
