@@ -91,8 +91,8 @@ export default function BracketView() {
                   stageMatches.map(match => (
                     <BracketCard key={match.id} match={match} />
                   ))
-                ) : (
-                  Array.from({ length: Math.min(slotCount, 4) }).map((_, i) => (
+               ) : (
+                  Array.from({ length: slotCount }).map((_, i) => (
                     <BracketPlaceholder key={i} />
                   ))
                 )}
