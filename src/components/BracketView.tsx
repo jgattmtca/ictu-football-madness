@@ -84,7 +84,7 @@ export default function BracketView() {
           return (
             <div key={stage} className="flex flex-col" style={{ width: 220, flexShrink: 0 }}>
               <h3 className="text-green-300/70 text-xs font-medium uppercase tracking-widest mb-3 text-center">
-                {STAGE_LABELS[stage]}
+                {STAGE_LABELS[stage]} ({slotCount} slots, {stageMatches.length} real)
               </h3>
               <div className="flex flex-col gap-3 flex-1 justify-around">
                 {hasData ? (
