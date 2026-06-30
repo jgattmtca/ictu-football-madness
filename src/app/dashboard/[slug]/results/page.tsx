@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import BracketView from '@/components/BracketView'
 
 interface Props { params: { slug: string } }
 
@@ -24,7 +25,7 @@ interface TopScorer {
   teamName?: string
 }
 
-type Tab = 'results' | 'upcoming' | 'standings' | 'topscorers'
+type Tab = 'results' | 'upcoming' | 'standings' | 'topscorers' | 'bracket'
 
 export default function ResultsPage({ params }: Props) {
   const [tab, setTab] = useState<Tab>('results')
@@ -95,6 +96,7 @@ export default function ResultsPage({ params }: Props) {
     { key: 'upcoming', label: '📅 Upcoming', count: upcoming.length },
     { key: 'standings', label: '📊 Standings' },
     { key: 'topscorers', label: '👟 Top scorers' },
+    { key: 'bracket', label: '🏆 Bracket' },
   ]
 
   return (
@@ -191,6 +193,10 @@ export default function ResultsPage({ params }: Props) {
 
             {tab === 'topscorers' && (
               <TopScorersView scorers={topScorers} />
+            )}
+
+            {tab === 'bracket' && (
+              <BracketView />
             )}
           </>
         )}
