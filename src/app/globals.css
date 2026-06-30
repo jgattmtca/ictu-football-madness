@@ -66,3 +66,26 @@ body {
   background: #f9fafb;
   color: #111827;
 }
+
+/* Stage-specific themes */
+.theme-group { --stage-color: #15803d; --stage-color-light: #22c55e; --stage-bg: #0f1f0f; }
+.theme-r32 { --stage-color: #1d4ed8; --stage-color-light: #3b82f6; --stage-bg: #0f1729; }
+.theme-r16 { --stage-color: #7c3aed; --stage-color-light: #a78bfa; --stage-bg: #1a0f29; }
+.theme-qf { --stage-color: #d97706; --stage-color-light: #fbbf24; --stage-bg: #291a0f; }
+.theme-sf { --stage-color: #dc2626; --stage-color-light: #f87171; --stage-bg: #290f0f; }
+.theme-final { --stage-color: #b45309; --stage-color-light: #fde047; --stage-bg: #292310; }
+
+.stage-watermark {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-25deg);
+  font-size: 8rem;
+  font-weight: 900;
+  color: var(--stage-color-light);
+  opacity: 0.04;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 0;
+  letter-spacing: 0.1em;
+}

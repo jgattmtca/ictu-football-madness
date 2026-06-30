@@ -11,6 +11,15 @@ export const revalidate = 5
 
 interface Props { params: { slug: string } }
 
+const STAGE_LABELS: Record<string, string> = {
+  group: 'GROUP STAGE',
+  r32: 'ROUND OF 32',
+  r16: 'ROUND OF 16',
+  qf: 'QUARTER FINALS',
+  sf: 'SEMI FINALS',
+  final: 'FINAL',
+}
+
 async function getLeaderboard(slug: string): Promise<{
   competition: any
   leaderboard: LeaderboardEntry[]
@@ -83,55 +92,59 @@ export default async function DashboardPage({ params }: Props) {
   const { competition, leaderboard } = await getLeaderboard(params.slug)
   if (!competition) notFound()
 
+  const stage = competition.current_stage || 'group'
+  const themeClass = `theme-${stage}`
+  const watermarkText = STAGE_LABELS[stage] || ''
+
   return (
-    <main className="min-h-screen pitch-bg">
-      <CompetitionHeader competition={competition} />
+    <main className={`min-h-screen pitch-bg relative overflow-hidden ${themeClass}`}>
+      <div className="stage-watermark">{watermarkText}</div>
 
-      {leaderboard.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-32 text-center">
-          <p className="text-5xl mb-4">🏟️</p>
-          <p className="text-green-300 text-lg">Competition is warming up…</p>
-          <p className="text-green-500/60 text-sm mt-2">Predictions will appear here once uploaded.</p>
-        </div>
-      ) : (
-        <div className="max-w-5xl mx-auto px-4 pb-16 space-y-10">
+      <div className="relative z-10">
+        <CompetitionHeader competition={competition} />
 
-          {/* Quick nav */}
-          <div className="flex gap-3 pt-2">
-            <Link
-              href={`/dashboard/${params.slug}/results`}
-              className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-green-500/40 text-green-300 text-sm px-4 py-2.5 rounded-xl transition-all"
-            >
-              ⚽ Match centre
-            </Link>
+        {leaderboard.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-32 text-center">
+            <p className="text-5xl mb-4">🏟️</p>
+            <p className="text-green-300 text-lg">Competition is warming up…</p>
+            <p className="text-green-500/60 text-sm mt-2">Predictions will appear here once uploaded.</p>
           </div>
+        ) : (
+          <div className="max-w-5xl mx-auto px-4 pb-16 space-y-10">
 
-          {/* Hall of Shame */}
-          <HallOfShame
-            leaderboard={leaderboard}
-            competitionId={competition.id}
-          />
+            <div className="flex gap-3 pt-2">
+              <Link
+                href={`/dashboard/${params.slug}/results`}
+                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-green-500/40 text-green-300 text-sm px-4 py-2.5 rounded-xl transition-all"
+              >
+                ⚽ Match centre
+              </Link>
+            </div>
 
-          {/* Rat race */}
-          <section>
-            <h2 className="text-green-300/70 text-sm font-medium uppercase tracking-widest mb-4">
-              Race to the top
-            </h2>
-            <RaceTrack leaderboard={leaderboard} />
-          </section>
+            <HallOfShame
+              leaderboard={leaderboard}
+              competitionId={competition.id}
+            />
 
-          {/* Score table */}
-          <section>
-            <h2 className="text-green-300/70 text-sm font-medium uppercase tracking-widest mb-4">
-              Full standings
-            </h2>
-            <ScoreTable leaderboard={leaderboard} />
-          </section>
+            <section>
+              <h2 className="text-green-300/70 text-sm font-medium uppercase tracking-widest mb-4">
+                Race to the top
+              </h2>
+              <RaceTrack leaderboard={leaderboard} />
+            </section>
 
-        </div>
-      )}
+            <section>
+              <h2 className="text-green-300/70 text-sm font-medium uppercase tracking-widest mb-4">
+                Full standings
+              </h2>
+              <ScoreTable leaderboard={leaderboard} />
+            </section>
 
-      <AutoRefresh />
+          </div>
+        )}
+
+        <AutoRefresh />
+      </div>
     </main>
   )
 }
