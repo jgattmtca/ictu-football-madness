@@ -11,6 +11,8 @@ interface BracketMatch {
   stage: string
   match_date: string | null
   match_time: string | null
+  penalty_home: number | null
+  penalty_away: number | null
 }
 
 const STAGE_ORDER = ['r32', 'r16', 'qf', 'sf', 'final']
@@ -108,16 +110,40 @@ export default function BracketView() {
 function BracketCard({ match }: { match: BracketMatch }) {
   const isFinished = match.status === 'finished'
   const isLive = match.status === 'live'
-  const homeWon = isFinished && match.home_score !== null && match.away_score !== null && match.home_score > match.away_score
-  const awayWon = isFinished && match.home_score !== null && match.away_score !== null && match.away_score > match.home_score
+  const wentToPenalties = match.penalty_home !== null && match.penalty_away !== null
+  const homeWon = isFinished && (
+    wentToPenalties
+      ? match.penalty_home! > match.penalty_away!
+      : match.home_score! > match.away_score!
+  )
+  const awayWon = isFinished && (
+    wentToPenalties
+      ? match.penalty_away! > match.penalty_home!
+      : match.away_score! > match.home_score!
+  )
 
   return (
     <div className={`rounded-xl border p-2.5 ${
       isLive ? 'bg-red-900/20 border-red-500/30' : 'bg-black/30 border-white/10'
     }`}>
-      <TeamRow name={match.home_team} score={match.home_score} winner={homeWon} finished={isFinished} />
+      <TeamRow
+        name={match.home_team}
+        score={match.home_score}
+        penalty={wentToPenalties ? match.penalty_home : null}
+        winner={homeWon}
+        finished={isFinished}
+      />
       <div className="h-px bg-white/10 my-1.5" />
-      <TeamRow name={match.away_team} score={match.away_score} winner={awayWon} finished={isFinished} />
+      <TeamRow
+        name={match.away_team}
+        score={match.away_score}
+        penalty={wentToPenalties ? match.penalty_away : null}
+        winner={awayWon}
+        finished={isFinished}
+      />
+      {wentToPenalties && (
+        <p className="text-center text-amber-400/60 text-[10px] mt-1.5">Won on penalties</p>
+      )}
       {!isFinished && match.match_date && (
         <p className="text-center text-green-500/40 text-[10px] mt-1.5">
           {new Date(match.match_date).toLocaleDateString([], { month: 'short', day: 'numeric' })}
@@ -132,9 +158,8 @@ function BracketCard({ match }: { match: BracketMatch }) {
     </div>
   )
 }
-
-function TeamRow({ name, score, winner, finished }: {
-  name: string; score: number | null; winner: boolean; finished: boolean
+function TeamRow({ name, score, penalty, winner, finished }: {
+  name: string; score: number | null; penalty?: number | null; winner: boolean; finished: boolean
 }) {
   return (
     <div className="flex items-center justify-between gap-2">
@@ -143,6 +168,9 @@ function TeamRow({ name, score, winner, finished }: {
       </span>
       <span className={`text-xs font-bold flex-shrink-0 ${winner ? 'text-green-400' : finished ? 'text-white/30' : 'text-white/40'}`}>
         {score !== null ? score : '–'}
+        {penalty !== null && penalty !== undefined && (
+          <span className="text-amber-400/70 ml-1">({penalty})</span>
+        )}
       </span>
     </div>
   )

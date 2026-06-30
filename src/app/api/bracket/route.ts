@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
 
   const { data: matches } = await supabase
     .from('matches')
-    .select('id, home_team, away_team, home_score, away_score, status, stage, match_date, match_time')
+    .select('id, home_team, away_team, home_score, away_score, status, stage, match_date, match_time, penalty_home, penalty_away')
     .eq('competition_id', competitionId)
     .in('stage', ['r32', 'r16', 'qf', 'sf', 'final'])
     .order('match_date', { ascending: true, nullsFirst: false })
