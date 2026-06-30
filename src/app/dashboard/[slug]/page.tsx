@@ -96,12 +96,14 @@ export default async function DashboardPage({ params }: Props) {
   const themeClass = `theme-${stage}`
   const watermarkText = STAGE_LABELS[stage] || ''
 
-  return (
-    <main className={`min-h-screen pitch-bg relative overflow-hidden ${themeClass}`}>
-      <div className="stage-watermark">{watermarkText}</div>
-
+    return (
+    <main className={`min-h-screen pitch-bg relative ${themeClass}`}>
       <div className="relative z-10">
         <CompetitionHeader competition={competition} />
+
+        {watermarkText && (
+          <h1 className="stage-title-banner">{watermarkText}</h1>
+        )}
 
         {leaderboard.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
