@@ -34,10 +34,21 @@ export default function ResultsPage({ params }: Props) {
   const [topScorers, setTopScorers] = useState<TopScorer[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [currentStage, setCurrentStage] = useState('group')
 
   useEffect(() => {
     loadFixtures()
+    loadStage()
   }, [])
+
+  async function loadStage() {
+    try {
+      const res = await fetch('/api/admin/competitions')
+      const json = await res.json()
+      const comp = json.competitions?.find((c: any) => c.is_active)
+      if (comp?.current_stage) setCurrentStage(comp.current_stage)
+    } catch {}
+  }
 
   useEffect(() => {
     if (tab === 'standings' && standings.length === 0) loadStandings()
@@ -100,7 +111,7 @@ export default function ResultsPage({ params }: Props) {
   ]
 
   return (
-    <div className="min-h-screen pitch-bg">
+    <div className={`min-h-screen pitch-bg theme-${currentStage}`}>
       <header className="border-b border-white/10 bg-black/30 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
