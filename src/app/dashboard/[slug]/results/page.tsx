@@ -10,7 +10,13 @@ interface Fixture {
   fixture?: { id: number; status?: { short: string; elapsed?: number } }
   teams?: { home: { name: string; logo?: string }; away: { name: string; logo?: string } }
   goals?: { home: number | null; away: number | null }
-  score?: { home: number | null; away: number | null; fullTime?: { home: number | null; away: number | null } }
+  score?: { 
+    home: number | null
+    away: number | null
+    fullTime?: { home: number | null; away: number | null }
+    regularTime?: { home: number | null; away: number | null }
+    penalties?: { home: number | null; away: number | null }
+  }
   date?: string
   homeTeam?: { name: string }
   awayTeam?: { name: string }
@@ -221,8 +227,11 @@ function MatchCard({ fixture, highlight = false, upcoming = false }: {
 }) {
   const homeTeam = fixture.teams?.home?.name ?? fixture.homeTeam?.name ?? 'TBD'
   const awayTeam = fixture.teams?.away?.name ?? fixture.awayTeam?.name ?? 'TBD'
-  const homeGoals = fixture.score?.fullTime?.home ?? fixture.goals?.home ?? fixture.score?.home
-  const awayGoals = fixture.score?.fullTime?.away ?? fixture.goals?.away ?? fixture.score?.away
+  const homeGoals = fixture.score?.regularTime?.home ?? fixture.score?.fullTime?.home ?? fixture.goals?.home ?? null
+  const awayGoals = fixture.score?.regularTime?.away ?? fixture.score?.fullTime?.away ?? fixture.goals?.away ?? null
+  const homePens = fixture.score?.penalties?.home ?? null
+  const awayPens = fixture.score?.penalties?.away ?? null
+  const wentToPens = homePens !== null && awayPens !== null
   const statusRaw = fixture.status ?? fixture.fixture?.status?.short ?? ''
   const isLive = ['IN_PLAY', 'PAUSED', '1H', '2H', 'HT', 'ET', 'P', 'LIVE'].includes(statusRaw)
   const elapsed = fixture.fixture?.status?.elapsed
@@ -246,13 +255,25 @@ function MatchCard({ fixture, highlight = false, upcoming = false }: {
           <span className="text-white font-medium text-sm sm:text-base">{homeTeam}</span>
         </div>
         <div className="mx-4 flex-shrink-0 text-center min-w-[80px]">
-          {upcoming ? (
+{upcoming ? (
             <span className="text-green-400/60 text-sm">vs</span>
           ) : homeGoals !== null && homeGoals !== undefined ? (
-            <div className="flex items-center gap-2 justify-center">
-              <span className="text-white font-bold text-xl">{homeGoals}</span>
-              <span className="text-white/30">–</span>
-              <span className="text-white font-bold text-xl">{awayGoals}</span>
+            <div className="flex flex-col items-center justify-center">
+              <div className="flex items-center gap-2 justify-center">
+                <span className="text-white font-bold text-xl">{homeGoals}</span>
+                <span className="text-white/30">–</span>
+                <span className="text-white font-bold text-xl">{awayGoals}</span>
+              </div>
+              {wentToPens && (
+                <div className="flex items-center gap-1 justify-center mt-0.5">
+                  <span className="text-amber-400/70 text-xs font-medium">({homePens}</span>
+                  <span className="text-amber-400/40 text-xs">–</span>
+                  <span className="text-amber-400/70 text-xs font-medium">{awayPens})</span>
+                </div>
+              )}
+              {wentToPens && (
+                <span className="text-amber-400/40 text-[10px]">pens</span>
+              )}
             </div>
           ) : (
             <span className="text-green-400/40 text-sm">vs</span>
