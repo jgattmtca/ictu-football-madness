@@ -99,8 +99,8 @@ export default function RaceTrack({ leaderboard }: Props) {
                       style={{
                         width: mounted ? `${pct}%` : '3%',
                         background: isLeader
-                          ? 'linear-gradient(90deg, #166534, #22c55e)'
-                          : 'linear-gradient(90deg, #1a3a1a, #15803d)',
+                          ? 'linear-gradient(90deg, var(--stage-color), var(--stage-color-light))'
+                          : 'linear-gradient(90deg, color-mix(in srgb, var(--stage-color) 40%, black), var(--stage-color))',
                         minWidth: 40,
                       }}
                     >
