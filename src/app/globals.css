@@ -72,7 +72,7 @@ body {
 .theme-group { --stage-color: #15803d; --stage-color-light: #22c55e; --stage-bg: #0f1f0f; background-color: #0f1f0f !important; }
 .theme-r32 { --stage-color: #1d4ed8; --stage-color-light: #3b82f6; --stage-bg: #0f1729; background-color: #0f1729 !important; }
 .theme-r16 { --stage-color: #7c3aed; --stage-color-light: #a78bfa; --stage-bg: #1a0f29; background-color: #1a0f29 !important; }
-.theme-qf { --stage-color: #ea580c; --stage-color-light: #fb923c; --stage-bg: #2a1505; background-color: #2a1505 !important; }
+.theme-qf { --stage-color: #ea580c; --stage-color-light: #fb923c; --stage-bg: #161008; background-color: #161008 !important; }
 .theme-sf { --stage-color: #dc2626; --stage-color-light: #f87171; --stage-bg: #290f0f; background-color: #290f0f !important; }
 .theme-final { --stage-color: #b45309; --stage-color-light: #fde047; --stage-bg: #292310; background-color: #292310 !important; }
 
