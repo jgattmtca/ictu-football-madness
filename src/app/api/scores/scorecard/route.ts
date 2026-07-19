@@ -93,6 +93,54 @@ export async function GET(req: NextRequest) {
       result,
     }
   })
+// Append bonus rows if competition has ended
+  const { data: comp } = await supabase
+    .from('competitions')
+    .select('actual_winner, actual_golden_boot')
+    .eq('id', competitionId)
+    .single()
+
+  const { data: special } = await supabase
+    .from('special_predictions')
+    .select('tournament_winner, golden_boot_player')
+    .eq('participant_id', participantId)
+    .eq('competition_id', competitionId)
+    .single()
+
+  if (comp?.actual_winner) {
+    const correct = special?.tournament_winner?.toLowerCase() === comp.actual_winner.toLowerCase()
+    scorecard.unshift({
+      homeTeam: '🏆 Tournament Winner',
+      awayTeam: '',
+      stage: 'bonus',
+      actualHome: null,
+      actualAway: null,
+      predHome: null,
+      predAway: null,
+      points: correct ? 10 : 0,
+      result: correct ? 'exact' : 'miss',
+      bonusLabel: special?.tournament_winner ?? '—',
+      bonusActual: comp.actual_winner,
+    } as any)
+  }
+
+  if (comp?.actual_golden_boot) {
+    const correct = special?.golden_boot_player?.toLowerCase() === comp.actual_golden_boot.toLowerCase()
+    scorecard.unshift({
+      homeTeam: '👟 Golden Boot',
+      awayTeam: '',
+      stage: 'bonus',
+      actualHome: null,
+      actualAway: null,
+      predHome: null,
+      predAway: null,
+      points: correct ? 10 : 0,
+      result: correct ? 'exact' : 'miss',
+      bonusLabel: special?.golden_boot_player ?? '—',
+      bonusActual: comp.actual_golden_boot,
+    } as any)
+  }
 
   return NextResponse.json({ scorecard })
+ 
 }

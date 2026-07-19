@@ -190,16 +190,21 @@ export default function RaceTrack({ leaderboard }: Props) {
                       }`}>
                         <td className="px-4 py-2.5">
                           <p className="text-white/80 text-xs">
-                            {row.homeTeam} vs {row.awayTeam}
+                            {(row as any).bonusLabel
+                              ? <>{row.homeTeam} <span className="text-white/40">— Picked: {(row as any).bonusLabel}</span></>
+                              : <>{row.homeTeam} vs {row.awayTeam}</>
+                            }
                           </p>
                         </td>
                         <td className="px-3 py-2.5 text-center">
                           <span className="text-white font-medium text-xs">
-                            {row.actualHome} – {row.actualAway}
+                            {(row as any).bonusActual ?? `${row.actualHome} – ${row.actualAway}`}
                           </span>
                         </td>
                         <td className="px-3 py-2.5 text-center">
-                          {row.predHome !== null ? (
+                          {(row as any).bonusLabel ? (
+                            <span className="text-white/20 text-xs">bonus</span>
+                          ) : row.predHome !== null ? (
                             <span className={`text-xs font-medium ${
                               row.result === 'exact' ? 'text-green-400' :
                               row.result === 'correct' ? 'text-blue-400' :
@@ -213,6 +218,7 @@ export default function RaceTrack({ leaderboard }: Props) {
                         </td>
                         <td className="px-4 py-2.5 text-center">
                           <span className={`font-bold text-sm ${
+		 	    row.points === 10 ? 'text-yellow-400' :
                             row.points === 5 ? 'text-green-400' :
                             row.points === 3 ? 'text-blue-400' :
                             'text-white/20'
