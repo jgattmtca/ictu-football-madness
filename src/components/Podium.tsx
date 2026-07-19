@@ -49,21 +49,22 @@ export default function Podium({ leaderboard }: Props) {
           </div>
         </div>
 
-        {/* 3rd place — handles ties */}
+        {/* 3rd place — handles ties side by side */}
         <div className="flex flex-col items-center gap-2 flex-1">
-          {third.map((entry, i) => (
-            <div key={entry.participant.id} className={`flex flex-col items-center gap-1 ${i > 0 ? 'mt-2' : ''}`}>
-              <Avatar participant={entry.participant} size="lg" />
-              <p className="text-white font-semibold text-sm text-center">{entry.participant.name}</p>
-            </div>
-          ))}
+          <div className="flex items-end justify-center gap-3">
+            {third.map((entry) => (
+              <div key={entry.participant.id} className="flex flex-col items-center gap-1">
+                <Avatar participant={entry.participant} size="lg" />
+                <p className="text-white font-semibold text-sm text-center">{entry.participant.name}</p>
+              </div>
+            ))}
+          </div>
           <p className="text-yellow-300/70 text-xs font-bold">{thirdPoints} pts</p>
           <div className="w-full rounded-t-xl flex items-center justify-center py-3 text-3xl"
             style={{ background: 'linear-gradient(180deg, #cd7c2f, #92400e)', minHeight: '60px' }}>
             🥉
           </div>
         </div>
-
       </div>
     </div>
   )
