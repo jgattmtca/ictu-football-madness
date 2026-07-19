@@ -6,6 +6,7 @@ import ScoreTable from '@/components/ScoreTable'
 import CompetitionHeader from '@/components/CompetitionHeader'
 import HallOfShame from '@/components/HallOfShame'
 import { LeaderboardEntry } from '@/types'
+import FinalHeader from '@/components/FinalHeader'
 
 export const revalidate = 5
 
@@ -98,10 +99,12 @@ export default async function DashboardPage({ params }: Props) {
 
     return (
     <main className={`min-h-screen pitch-bg relative ${themeClass}`}>
-      <div className="relative z-10">
+       <div className="relative z-10">
         <CompetitionHeader competition={competition} />
 
-        {watermarkText && (
+        {stage === 'final' ? (
+          <FinalHeader />
+        ) : watermarkText && (
           <h1 className="stage-title-banner">{watermarkText}</h1>
         )}
 
