@@ -15,7 +15,6 @@ export default function FinalHeader() {
           <div style={{ flex: 2, background: '#ffc400' }} />
           <div className="flex-1" style={{ background: '#c60b1e' }} />
         </div>
-        {/* Fade to dark on right edge */}
         <div className="absolute inset-0" style={{
           background: 'linear-gradient(to right, transparent 0%, transparent 70%, #1a1200 100%)'
         }} />
@@ -28,7 +27,6 @@ export default function FinalHeader() {
           <div className="flex-1" style={{ background: '#ffffff' }} />
           <div className="flex-1" style={{ background: '#74acdf' }} />
         </div>
-        {/* Fade to dark on left edge */}
         <div className="absolute inset-0" style={{
           background: 'linear-gradient(to left, transparent 0%, transparent 70%, #1a1200 100%)'
         }} />
@@ -45,12 +43,11 @@ export default function FinalHeader() {
           letterSpacing: '0.15em',
           textShadow: '0 0 30px rgba(251,191,36,0.4)'
         }}>
-          THE FINAL
+          🏆 SPAIN
         </h1>
-        <p className="font-bold text-lg mb-1" style={{ color: '#fb923c', letterSpacing: '0.1em' }}>
-          SPAIN &nbsp;vs&nbsp; ARGENTINA
+        <p className="font-bold text-lg" style={{ color: '#fb923c', letterSpacing: '0.15em' }}>
+          WORLD CHAMPIONS 2026
         </p>
-        <p className="text-xs" style={{ color: '#fbbf24' }}>Jul 19 · 19:00</p>
       </div>
 
       {/* Country labels at bottom */}

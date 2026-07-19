@@ -7,6 +7,7 @@ import CompetitionHeader from '@/components/CompetitionHeader'
 import HallOfShame from '@/components/HallOfShame'
 import { LeaderboardEntry } from '@/types'
 import FinalHeader from '@/components/FinalHeader'
+import Podium from '@/components/Podium'
 
 export const revalidate = 5
 
@@ -126,6 +127,10 @@ export default async function DashboardPage({ params }: Props) {
               </Link>
             </div>
 
+{/* Podium — only shown in Final */}
+          {stage === 'final' && (
+            <Podium leaderboard={leaderboard} />
+          )}
             <HallOfShame
               leaderboard={leaderboard}
               competitionId={competition.id}
