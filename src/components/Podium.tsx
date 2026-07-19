@@ -6,10 +6,18 @@ interface Props {
 }
 
 export default function Podium({ leaderboard }: Props) {
-  const top3 = leaderboard.slice(0, 3)
-  if (top3.length < 3) return null
+  if (leaderboard.length < 2) return null
 
-  const [first, second, third] = top3
+  const first = leaderboard[0]
+  const second = leaderboard[1]
+
+  // Find all participants tied for 3rd (same points as position 3)
+  const thirdPoints = leaderboard[2]?.score.total_points
+  const third = leaderboard.filter(e =>
+    e.score.total_points === thirdPoints &&
+    e.participant.id !== first.participant.id &&
+    e.participant.id !== second.participant.id
+  )
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 py-6">
@@ -41,11 +49,15 @@ export default function Podium({ leaderboard }: Props) {
           </div>
         </div>
 
-        {/* 3rd place */}
+        {/* 3rd place — handles ties */}
         <div className="flex flex-col items-center gap-2 flex-1">
-          <Avatar participant={third.participant} size="lg" />
-          <p className="text-white font-semibold text-sm text-center">{third.participant.name}</p>
-          <p className="text-yellow-300/70 text-xs font-bold">{third.score.total_points} pts</p>
+          {third.map((entry, i) => (
+            <div key={entry.participant.id} className={`flex flex-col items-center gap-1 ${i > 0 ? 'mt-2' : ''}`}>
+              <Avatar participant={entry.participant} size="lg" />
+              <p className="text-white font-semibold text-sm text-center">{entry.participant.name}</p>
+            </div>
+          ))}
+          <p className="text-yellow-300/70 text-xs font-bold">{thirdPoints} pts</p>
           <div className="w-full rounded-t-xl flex items-center justify-center py-3 text-3xl"
             style={{ background: 'linear-gradient(180deg, #cd7c2f, #92400e)', minHeight: '60px' }}>
             🥉
