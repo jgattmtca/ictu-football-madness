@@ -49,34 +49,54 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, message: 'No predictions found' })
     }
 
-    // Step 5 - Calculate points
+    // Step 5 - Calculate match points
     const matchMap = new Map(matches.map((m: any) => [m.id, m]))
     const scores = new Map<string, any>()
 
     for (const pred of predictions) {
       const match = matchMap.get(pred.match_id) as any
       if (!match) continue
-
       const s = scores.get(pred.participant_id) ?? {
         total_points: 0, exact_scores: 0, correct_results: 0, scored_matches: 0
       }
       s.scored_matches++
-
       const exact = pred.home_score === match.home_score && pred.away_score === match.away_score
       const correct = Math.sign(pred.home_score - pred.away_score) === Math.sign(match.home_score - match.away_score)
-
       if (exact) { s.total_points += 5; s.exact_scores++ }
       else if (correct) { s.total_points += 3; s.correct_results++ }
-
       scores.set(pred.participant_id, s)
     }
 
-    // Step 6 - Update scores
+    // Step 6 - Add bonus points (tournament winner + golden boot)
+    const { data: comp } = await supabaseAdmin
+      .from('competitions')
+      .select('actual_winner, actual_golden_boot')
+      .eq('id', competitionId)
+      .single()
+
+    if (comp?.actual_winner || comp?.actual_golden_boot) {
+      const { data: specials } = await supabaseAdmin
+        .from('special_predictions')
+        .select('participant_id, tournament_winner, golden_boot_player')
+        .eq('competition_id', competitionId)
+
+      for (const sp of specials || []) {
+        const s = scores.get(sp.participant_id)
+        if (!s) continue
+        if (comp.actual_winner && sp.tournament_winner?.toLowerCase() === comp.actual_winner.toLowerCase()) {
+          s.total_points += 10
+        }
+        if (comp.actual_golden_boot && sp.golden_boot_player?.toLowerCase() === comp.actual_golden_boot.toLowerCase()) {
+          s.total_points += 10
+        }
+      }
+    }
+
+    // Step 7 - Update scores
     for (const [participantId, score] of Array.from(scores.entries())) {
       const accuracyPct = score.scored_matches > 0
         ? Math.round(((score.exact_scores + score.correct_results) / score.scored_matches) * 100 * 100) / 100
         : 0
-
       await supabaseAdmin
         .from('scores')
         .update({
